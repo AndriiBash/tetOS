@@ -6,34 +6,58 @@ import platform
 
 from pathlib import Path
 
-
-# ===== Конфиги =====
-VERSION = "2025.12.22"
-SERVER_DIR = Path(__file__).resolve().parent
-RUN_SCRIPT = SERVER_DIR / "run_server.sh"
-OS_NAME = platform.system()
-if OS_NAME in ["Linux", "Darwin"]:
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    RED = "\033[31m"
-    CYAN = "\033[36m"
-    RESET = "\033[0m"
-else:
-    GREEN = YELLOW = RED = CYAN = RESET = ""
+from config import *
 
 
-# ===== Состояние сервера =====
-SERVER_IS_READY = False
-SERVER_GAME_MODE = "UNKNOWN"
-SERVER_MC_VERSION = "UNKNOWN"
-SERVER_PROCESS = None
-SERVER_ONLINE_PLAYERS = 0
-SERVER_MAX_PLAYERS = 20 #need fix, get info from server.prop
+try:
+    from telegram_bot import init_bot, broadcast  # broadcast будем использовать для уведомлений
+    TELEGRAM_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Не удалось импортировать telegram_bot.py: {e}")
+    TELEGRAM_AVAILABLE = False
+    broadcast = lambda message: None  # заглушка, чтобы не падало при вызове
+
+
+# ===== Функция для чтения max-players из server.properties =====
+def get_max_players():
+    props_file = SERVER_DIR.parent / "server.properties"
+    if not props_file.exists():
+        return 20
+    try:
+        with open(props_file, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("max-players="):
+                    return int(line.split("=")[1].strip())
+    except:
+        pass
+    return 1
+
+
+# ===== Функция для чтения максимальной RAM из run_server.sh =====
+def get_max_ram_mb():
+    script_file = SERVER_DIR.parent / "run_server.sh"
+    if not script_file.exists():
+        return 4096  # дефолт, if файла нет
+    try:
+        with open(script_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            import re
+            match = re.search(r'-Xmx(\d+)([MG])', content)
+            if match:
+                value = int(match.group(1))
+                unit = match.group(2)
+                if unit == 'G':
+                    return value * 1024
+                else:
+                    return value
+    except:
+        pass
+    return 4096  # fallback
 
 
 # ===== Функция для расчёта размера мира =====
 def get_world_size():
-    world_dir = SERVER_DIR / "world"
+    world_dir = SERVER_DIR.parent / "world"
     if not world_dir.exists():
         return "Unknown"
     total_size = 0
@@ -105,9 +129,9 @@ def read_output(process):
 
 # ===== Функция для запуска сервера =====
 def start_server():
-    global SERVER_PROCESS, SERVER_IS_READY
+    global SERVER_PROCESS, SERVER_IS_READY, SERVER_MAX_PLAYERS, SERVER_MAX_RAM_MB
     if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
-        print(f"{YELLOW}⚡ Server is already running!{RESET}")
+        print(f"{YELLOW}Server is already running!{RESET}")
         return
 
     print(f"{GREEN}🚀 Starting server...{RESET}")
@@ -129,40 +153,62 @@ def start_server():
 
 
 # ===== Основная CLI петля =====
+# clear_terminal вызывается чтобы убрать уведомление про устаревший OpenSSL
+# который не влияет на роботоспособность
+
 clear_terminal()
-print(f"""{RED}
-  _____          _      ___    ____  
- |_   _|   ___  | |_   / _ \  / ___| 
-   | |    / _ \ | __| | | | | \___ \ 
-   | |   |  __/ | |_  | |_| |  ___) |
-   |_|    \___|  \__|  \___/  |____/ {RESET}
-          version: {YELLOW}{VERSION}{RESET}                       
-          """)
+banner = f"""{RED}
+  _____          _      {RESET}___    ____  {RED}
+ |_   _|   ___  | |_   {RESET}/ _ \  / ___| {RED}
+   | |    / _ \ | __| {RESET}| | | | \___ \ {RED}
+   | |   |  __/ | |_  {RESET}| |_| |  ___) |{RED}
+   |_|    \___|  \__|  {RESET}\___/  |____/ {RESET}
+   """
+
+bot_success = False
+if TELEGRAM_AVAILABLE:
+    bot_success = init_bot()
+
+bot_status = "true" if (TELEGRAM_AVAILABLE and bot_success) else "false" if TELEGRAM_AVAILABLE else "off"
+bot_color = GREEN if (TELEGRAM_AVAILABLE and bot_success) else RED if TELEGRAM_AVAILABLE else YELLOW
+
+info_line = f"Version: {YELLOW}{VERSION}{RESET}"
+status_line = f"Telegram notifications: {bot_color}{bot_status}{RESET}"
+
+max_len = max(len(info_line), len(status_line)) + 4
+print(banner)
+print(f"┌{'─' * (max_len - 5)}┐")
+print(f"│  {info_line.center(max_len)}  │")
+print(f"│  {status_line.center(max_len)}  │")
+print(f"└{'─' * (max_len - 5)}┘")
+
+if not TELEGRAM_AVAILABLE:
+    print(f"{RED}🔕 Telegram notifications disabled (missing telegram_bot.py or libraries){RESET}")
 
 try:
     while True:
         cmd = input().strip().lower()
 
-        # ---- Кастомные команды утилиты ----
-        if cmd == "pingme":
-            print(f"{YELLOW}🏓 PONG!{RESET}")
-
-        elif cmd == "info":
+        # Команды утилиты
+        if cmd == "info":
             print(f"📋 Server Info:")
+            SERVER_MAX_PLAYERS = get_max_players()
+            SERVER_MAX_RAM_MB = get_max_ram_mb()
+
             if SERVER_PROCESS is None or SERVER_PROCESS.poll() is not None:
                 print(f" - Status: {RED}Not running{RESET}")
                 print(f" - Minecraft version: {YELLOW}Unknown{RESET}")
                 print(f" - Game mode: {YELLOW}Unknown{RESET}")
-                print(f" - Online players: {YELLOW}0/{SERVER_MAX_PLAYERS}{RESET}")
-                print(f" - Used RAM: {YELLOW}0 MB{RESET}")
+                print(f" - Online players: {YELLOW}0 / {SERVER_MAX_PLAYERS}{RESET}")
+                print(f" - Used RAM: {YELLOW}0 MB / {SERVER_MAX_RAM_MB} MB{RESET}")
                 print(f" - World size: {YELLOW}Unknown{RESET}")
             else:
                 status = f"{GREEN}Running (ready){RESET}" if SERVER_IS_READY else f"{YELLOW}Running (starting...){RESET}"
                 print(f" - Status: {status}")
                 print(f" - Minecraft version: {YELLOW}{SERVER_MC_VERSION}{RESET}")
                 print(f" - Game mode: {YELLOW}{SERVER_GAME_MODE}{RESET}")
-                print(f" - Online players: {GREEN}{SERVER_ONLINE_PLAYERS}/{SERVER_MAX_PLAYERS}{RESET}")
-                print(f" - Used RAM: {YELLOW}{get_used_ram()}{RESET}")
+                print(f" - Online players: {GREEN}{SERVER_ONLINE_PLAYERS} / {SERVER_MAX_PLAYERS}{RESET}")
+                print(f" - Used RAM: {YELLOW}{get_used_ram()} / {SERVER_MAX_RAM_MB} MB{RESET}")
                 print(f" - World size: {YELLOW}{get_world_size()}{RESET}")
 
         elif cmd in ["tetos", "version"]:
@@ -173,6 +219,9 @@ try:
 
         elif cmd == "exit":
             exit_utility()
+
+        elif cmd == "clear" or cmd == "cls":
+            clear_terminal()
 
         elif cmd == "stop":
             if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
@@ -185,7 +234,7 @@ try:
                 SERVER_GAME_MODE = "UNKNOWN"
                 SERVER_MC_VERSION = "UNKNOWN"
             else:
-                print(f"{YELLOW}⚠ Server is not running!{RESET}")
+                print(f"{YELLOW}Server is not running!{RESET}")
 
         elif cmd == "restart":
             if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
@@ -213,3 +262,4 @@ except KeyboardInterrupt:
         SERVER_PROCESS.stdin.flush()
         SERVER_PROCESS.wait()
     sys.exit(0)
+

@@ -1,4 +1,5 @@
-### Ignore macOS Files and others...###
+### Ignore macOS Files and others trash files...###
 
 .DS_Store
 .env
+.txt
