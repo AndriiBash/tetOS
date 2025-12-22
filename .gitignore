@@ -1,3 +1,4 @@
-### Ignore macOS Files ###
+### Ignore macOS Files and others...###
 
 .DS_Store
+.env
