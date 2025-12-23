@@ -1,3 +1,12 @@
+# ==============================================================================
+# config.py
+# ==============================================================================
+# Author:      AndriiBash
+# Created:     2025-12-22
+# Project:     TetOS (github.com/AndriiBash/tetOS)
+# ==============================================================================
+
+
 import os
 import sys
 import platform
@@ -6,7 +15,7 @@ from pathlib import Path
 
 
 # ===== Конфиги =====
-VERSION = "2025.12.23"
+VERSION = "2025.12.24"
 SERVER_DIR = Path(__file__).resolve().parent
 RUN_SCRIPT = SERVER_DIR.parent / "run_server.sh"
 OS_NAME = platform.system()
@@ -36,3 +45,5 @@ SERVER_PROCESS = None
 SERVER_ONLINE_PLAYERS = 0
 SERVER_MAX_PLAYERS = 1
 SERVER_MAX_RAM_MB = 2048
+SERVER_IP = "0"
+SERVER_PORT = "0"

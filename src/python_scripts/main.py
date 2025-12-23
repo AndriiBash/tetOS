@@ -1,28 +1,50 @@
+# ==============================================================================
+# main.py
+# ==============================================================================
+# Author:      AndriiBash
+# Created:     2025-12-21
+# Project:     TetOS (github.com/AndriiBash/tetOS)
+# ==============================================================================
+
+
 import os
 import sys
 import subprocess
 import threading
 import platform
+import config
 
 from pathlib import Path
-
-from config import *
+from config import (
+    GREEN,
+    YELLOW,
+    RED,
+    CYAN,
+    RESET,
+    VERSION
+    )
 
 
 try:
-    from telegram_bot import init_bot, broadcast  # broadcast будем использовать для уведомлений
-    TELEGRAM_AVAILABLE = True
+    from telegram_bot import (
+        init_bot, 
+        broadcast,
+        notify_server_ready,
+        notify_server_stopped,
+        notify_server_restarted
+        )
+    config.TELEGRAM_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Не удалось импортировать telegram_bot.py: {e}")
-    TELEGRAM_AVAILABLE = False
-    broadcast = lambda message: None  # заглушка, чтобы не падало при вызове
+    print(f"Failed to import telegram_bot.py: {e}")
+    config.TELEGRAM_AVAILABLE = False
+    #broadcast = lambda message: None  # заглушка, чтобы не падало при вызове
 
 
 # ===== Функция для чтения max-players из server.properties =====
 def get_max_players():
-    props_file = SERVER_DIR.parent / "server.properties"
+    props_file = config.SERVER_DIR.parent / "server.properties"
     if not props_file.exists():
-        return 20
+        return 1
     try:
         with open(props_file, "r", encoding="utf-8") as f:
             for line in f:
@@ -33,11 +55,24 @@ def get_max_players():
     return 1
 
 
+# ===== Функция для получения IP Hamachi =====
+def detect_hamachi_ip():
+    try:
+        ip = subprocess.check_output(
+            "ifconfig | awk '/inet 25\\./ {print $2}'",
+            shell=True,
+            text=True
+        ).strip()
+        return ip if ip else "Unknown"
+    except Exception:
+        return "Unknown"
+
+
 # ===== Функция для чтения максимальной RAM из run_server.sh =====
 def get_max_ram_mb():
-    script_file = SERVER_DIR.parent / "run_server.sh"
+    script_file = config.SERVER_DIR.parent / "run_server.sh"
     if not script_file.exists():
-        return 4096  # дефолт, if файла нет
+        return 4096  # дефолт, если файла нет
     try:
         with open(script_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -57,7 +92,7 @@ def get_max_ram_mb():
 
 # ===== Функция для расчёта размера мира =====
 def get_world_size():
-    world_dir = SERVER_DIR.parent / "world"
+    world_dir = config.SERVER_DIR.parent / "world"
     if not world_dir.exists():
         return "Unknown"
     total_size = 0
@@ -73,11 +108,11 @@ def get_world_size():
 
 # ===== Функция для used RAM =====
 def get_used_ram():
-    if SERVER_PROCESS is None or SERVER_PROCESS.poll() is not None:
+    if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
         return "0 MB"
     try:
         import psutil
-        p = psutil.Process(SERVER_PROCESS.pid)
+        p = psutil.Process(config.SERVER_PROCESS.pid)
         return f"{p.memory_info().rss / (1024**2):.2f} MB"
     except:
         return f"{CYAN}Unknown (install psutil for accurate){RESET}"
@@ -93,55 +128,63 @@ def clear_terminal():
 
 # ===== Функция выхода из утилиты =====
 def exit_utility():
-    global SERVER_PROCESS
-    if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
+    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
         print(f"{RED}🛑 Stopping server before exiting...{RESET}")
-        SERVER_PROCESS.stdin.write("stop\n")
-        SERVER_PROCESS.stdin.flush()
-        SERVER_PROCESS.wait()
-    clear_terminal()
+        stop_server()
+        clear_terminal()
     sys.exit(0)
 
 
 # ===== Функция для чтения логов сервера =====
 def read_output(process):
-    global SERVER_IS_READY, SERVER_GAME_MODE, SERVER_MC_VERSION, SERVER_ONLINE_PLAYERS
     try:
         for line in iter(process.stdout.readline, ''):
             if line:  # Проверяем, что строка не пустая
                 sys.stdout.write(line)
                 sys.stdout.flush()
 
+                if "Starting Minecraft server on" in line:
+                    try:
+                        address_part = line.split("on")[1].strip()
+                        if ":" in address_part:
+                            ip_part, port_part = address_part.split(":", 1)
+                            detected_port = port_part.strip()
+                            config.SERVER_PORT = detected_port
+                            config.SERVER_IP = detect_hamachi_ip()
+                    except Exception as e:
+                        print(f"{RED}Failed to recognize address: {e}{RESET}")
+
+
                 if "Default game type:" in line:
-                    SERVER_GAME_MODE = line.split("Default game type:")[1].strip()
+                    config.SERVER_GAME_MODE = line.split("Default game type:")[1].strip()
                 if "Starting minecraft server version" in line:
-                    SERVER_MC_VERSION = line.split("Starting minecraft server version")[1].strip()
-                if "Done (" in line and not SERVER_IS_READY:
-                    SERVER_IS_READY = True
+                    config.SERVER_MC_VERSION = line.split("Starting minecraft server version")[1].strip()
+                if "Done (" in line and not config.SERVER_IS_READY:
+                    config.SERVER_IS_READY = True
+                    notify_server_ready()
                     print(f"{GREEN}✅ Server is ready!{RESET}")
                 if "joined the game" in line:
-                    SERVER_ONLINE_PLAYERS += 1
+                    config.SERVER_ONLINE_PLAYERS += 1
                 if "left the game" in line:
-                    SERVER_ONLINE_PLAYERS = max(0, SERVER_ONLINE_PLAYERS - 1)
+                    config.SERVER_ONLINE_PLAYERS = max(0, config.SERVER_ONLINE_PLAYERS - 1)
     except ValueError:
         pass
 
 
 # ===== Функция для запуска сервера =====
 def start_server():
-    global SERVER_PROCESS, SERVER_IS_READY, SERVER_MAX_PLAYERS, SERVER_MAX_RAM_MB
-    if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
+    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
         print(f"{YELLOW}Server is already running!{RESET}")
         return
 
     print(f"{GREEN}🚀 Starting server...{RESET}")
-    SERVER_IS_READY = False
-    SERVER_GAME_MODE = "UNKNOWN"
-    SERVER_MC_VERSION = "UNKNOWN"
+    config.SERVER_IS_READY = False
+    config.SERVER_GAME_MODE = "UNKNOWN"
+    config.SERVER_MC_VERSION = "UNKNOWN"
 
-    SERVER_PROCESS = subprocess.Popen(
-        [str(RUN_SCRIPT)],
-        cwd=SERVER_DIR,
+    config.SERVER_PROCESS = subprocess.Popen(
+        [str(config.RUN_SCRIPT)],
+        cwd=config.SERVER_DIR,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -149,8 +192,37 @@ def start_server():
         bufsize=1,
         universal_newlines=True
     )
-    threading.Thread(target=read_output, args=(SERVER_PROCESS,), daemon=True).start()
+    threading.Thread(target=read_output, args=(config.SERVER_PROCESS,), daemon=True).start()
+    
 
+# ===== Функция для остановки сервера =====
+def stop_server(suppress_notification: bool = False):
+    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+        print(f"{RED}🛑 Stopping server...{RESET}")
+        config.SERVER_PROCESS.stdin.write("stop\n")
+        config.SERVER_PROCESS.stdin.flush()
+        config.SERVER_PROCESS.wait()
+        config.SERVER_PROCESS = None
+        config.SERVER_IS_READY = False
+        config.SERVER_GAME_MODE = "UNKNOWN"
+        config.SERVER_MC_VERSION = "UNKNOWN"
+        print(f"{RED}🛑 Server stopped!{RESET}")
+
+        if suppress_notification is False:
+            notify_server_stopped()
+    else:
+        print(f"{YELLOW}Server is not running!{RESET}")
+
+
+# ===== Функция для перезапуска сервера =====
+def restart_server():
+    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+        print(f"{YELLOW}🔄 Restarting server...{RESET}")
+        stop_server(suppress_notification=True)
+        start_server()#suppress_notification=True)
+        notify_server_restarted()
+    else:
+        start_server()
 
 # ===== Основная CLI петля =====
 # clear_terminal вызывается чтобы убрать уведомление про устаревший OpenSSL
@@ -166,11 +238,11 @@ banner = f"""{RED}
    """
 
 bot_success = False
-if TELEGRAM_AVAILABLE:
+if config.TELEGRAM_AVAILABLE:
     bot_success = init_bot()
 
-bot_status = "true" if (TELEGRAM_AVAILABLE and bot_success) else "false" if TELEGRAM_AVAILABLE else "off"
-bot_color = GREEN if (TELEGRAM_AVAILABLE and bot_success) else RED if TELEGRAM_AVAILABLE else YELLOW
+bot_status = "true" if (config.TELEGRAM_AVAILABLE and bot_success) else "false" if config.TELEGRAM_AVAILABLE else "off"
+bot_color = GREEN if (config.TELEGRAM_AVAILABLE and bot_success) else RED if config.TELEGRAM_AVAILABLE else YELLOW
 
 info_line = f"Version: {YELLOW}{VERSION}{RESET}"
 status_line = f"Telegram notifications: {bot_color}{bot_status}{RESET}"
@@ -180,9 +252,9 @@ print(banner)
 print(f"┌{'─' * (max_len - 5)}┐")
 print(f"│  {info_line.center(max_len)}  │")
 print(f"│  {status_line.center(max_len)}  │")
-print(f"└{'─' * (max_len - 5)}┘")
+print(f"└{'─' * (max_len - 5)}┘\n")
 
-if not TELEGRAM_AVAILABLE:
+if not config.TELEGRAM_AVAILABLE:
     print(f"{RED}🔕 Telegram notifications disabled (missing telegram_bot.py or libraries){RESET}")
 
 try:
@@ -195,7 +267,7 @@ try:
             SERVER_MAX_PLAYERS = get_max_players()
             SERVER_MAX_RAM_MB = get_max_ram_mb()
 
-            if SERVER_PROCESS is None or SERVER_PROCESS.poll() is not None:
+            if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
                 print(f" - Status: {RED}Not running{RESET}")
                 print(f" - Minecraft version: {YELLOW}Unknown{RESET}")
                 print(f" - Game mode: {YELLOW}Unknown{RESET}")
@@ -203,7 +275,7 @@ try:
                 print(f" - Used RAM: {YELLOW}0 MB / {SERVER_MAX_RAM_MB} MB{RESET}")
                 print(f" - World size: {YELLOW}Unknown{RESET}")
             else:
-                status = f"{GREEN}Running (ready){RESET}" if SERVER_IS_READY else f"{YELLOW}Running (starting...){RESET}"
+                status = f"{GREEN}Running (ready){RESET}" if config.SERVER_IS_READY else f"{YELLOW}Running (starting...){RESET}"
                 print(f" - Status: {status}")
                 print(f" - Minecraft version: {YELLOW}{SERVER_MC_VERSION}{RESET}")
                 print(f" - Game mode: {YELLOW}{SERVER_GAME_MODE}{RESET}")
@@ -224,42 +296,23 @@ try:
             clear_terminal()
 
         elif cmd == "stop":
-            if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
-                print(f"{RED}🛑 Stopping server...{RESET}")
-                SERVER_PROCESS.stdin.write("stop\n")
-                SERVER_PROCESS.stdin.flush()
-                SERVER_PROCESS.wait()
-                SERVER_PROCESS = None
-                SERVER_IS_READY = False
-                SERVER_GAME_MODE = "UNKNOWN"
-                SERVER_MC_VERSION = "UNKNOWN"
-            else:
-                print(f"{YELLOW}Server is not running!{RESET}")
+            stop_server()
 
         elif cmd == "restart":
-            if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
-                print(f"{YELLOW}🔄 Restarting server...{RESET}")
-                SERVER_PROCESS.stdin.write("stop\n")
-                SERVER_PROCESS.stdin.flush()
-                SERVER_PROCESS.wait()
-                SERVER_PROCESS = None
-                SERVER_IS_READY = False
-                SERVER_GAME_MODE = "UNKNOWN"
-                SERVER_MC_VERSION = "UNKNOWN"
-            start_server()
+            restart_server()
 
         else:
-            if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
-                SERVER_PROCESS.stdin.write(cmd + "\n")
-                SERVER_PROCESS.stdin.flush()
+            if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+                config.SERVER_PROCESS.stdin.write(cmd + "\n")
+                config.SERVER_PROCESS.stdin.flush()
             else:
                 print(f"{YELLOW}Server is not running! Use 'start' to launch.{RESET}")
 
 except KeyboardInterrupt:
     print(f"\n{RED}✋ All be okay...{RESET}")
-    if SERVER_PROCESS is not None and SERVER_PROCESS.poll() is None:
-        SERVER_PROCESS.stdin.write("stop\n")
-        SERVER_PROCESS.stdin.flush()
-        SERVER_PROCESS.wait()
+    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+        config.SERVER_PROCESS.stdin.write("stop\n")
+        config.SERVER_PROCESS.stdin.flush()
+        config.SERVER_PROCESS.wait()
     sys.exit(0)
 
