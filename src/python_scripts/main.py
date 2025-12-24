@@ -59,7 +59,7 @@ def get_max_players():
 def detect_hamachi_ip():
     try:
         ip = subprocess.check_output(
-            "ifconfig | awk '/inet 25\\./ {print $2}'",
+            "hamachi | awk -F': +' '/address/ {print $2}' | awk '{print $1}'",
             shell=True,
             text=True
         ).strip()
@@ -131,7 +131,7 @@ def exit_utility():
     if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
         print(f"{RED}🛑 Stopping server before exiting...{RESET}")
         stop_server()
-        clear_terminal()
+    clear_terminal()
     sys.exit(0)
 
 
@@ -165,8 +165,12 @@ def read_output(process):
                     print(f"{GREEN}✅ Server is ready!{RESET}")
                 if "joined the game" in line:
                     config.SERVER_ONLINE_PLAYERS += 1
+                    username = line.split("joined the game")[0].split()[-1]
+                    broadcast(f"🎮 {username} joined the game!")
                 if "left the game" in line:
                     config.SERVER_ONLINE_PLAYERS = max(0, config.SERVER_ONLINE_PLAYERS - 1)
+                    username = line.split("left the game")[0].split()[-1]
+                    broadcast(f"🔚 {username} left the game!")
     except ValueError:
         pass
 
@@ -181,6 +185,8 @@ def start_server():
     config.SERVER_IS_READY = False
     config.SERVER_GAME_MODE = "UNKNOWN"
     config.SERVER_MC_VERSION = "UNKNOWN"
+    config.SERVER_MAX_PLAYERS = get_max_players()
+    config.SERVER_MAX_RAM_MB = get_max_ram_mb()
 
     config.SERVER_PROCESS = subprocess.Popen(
         [str(config.RUN_SCRIPT)],
@@ -219,8 +225,10 @@ def restart_server():
     if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
         print(f"{YELLOW}🔄 Restarting server...{RESET}")
         stop_server(suppress_notification=True)
-        start_server()#suppress_notification=True)
+        start_server()
         notify_server_restarted()
+
+        config.SERVER_ONLINE_PLAYERS = 0
     else:
         start_server()
 
@@ -264,23 +272,21 @@ try:
         # Команды утилиты
         if cmd == "info":
             print(f"📋 Server Info:")
-            SERVER_MAX_PLAYERS = get_max_players()
-            SERVER_MAX_RAM_MB = get_max_ram_mb()
 
             if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
                 print(f" - Status: {RED}Not running{RESET}")
                 print(f" - Minecraft version: {YELLOW}Unknown{RESET}")
                 print(f" - Game mode: {YELLOW}Unknown{RESET}")
-                print(f" - Online players: {YELLOW}0 / {SERVER_MAX_PLAYERS}{RESET}")
-                print(f" - Used RAM: {YELLOW}0 MB / {SERVER_MAX_RAM_MB} MB{RESET}")
+                print(f" - Online players: {YELLOW}0 / {config.SERVER_MAX_PLAYERS}{RESET}")
+                print(f" - Used RAM: {YELLOW}0 MB / {config.SERVER_MAX_RAM_MB} MB{RESET}")
                 print(f" - World size: {YELLOW}Unknown{RESET}")
             else:
                 status = f"{GREEN}Running (ready){RESET}" if config.SERVER_IS_READY else f"{YELLOW}Running (starting...){RESET}"
                 print(f" - Status: {status}")
-                print(f" - Minecraft version: {YELLOW}{SERVER_MC_VERSION}{RESET}")
-                print(f" - Game mode: {YELLOW}{SERVER_GAME_MODE}{RESET}")
-                print(f" - Online players: {GREEN}{SERVER_ONLINE_PLAYERS} / {SERVER_MAX_PLAYERS}{RESET}")
-                print(f" - Used RAM: {YELLOW}{get_used_ram()} / {SERVER_MAX_RAM_MB} MB{RESET}")
+                print(f" - Minecraft version: {YELLOW}{config.SERVER_MC_VERSION}{RESET}")
+                print(f" - Game mode: {YELLOW}{config.SERVER_GAME_MODE}{RESET}")
+                print(f" - Online players: {GREEN}{config.SERVER_ONLINE_PLAYERS} / {config.SERVER_MAX_PLAYERS}{RESET}")
+                print(f" - Used RAM: {YELLOW}{get_used_ram()} / {config.SERVER_MAX_RAM_MB} MB{RESET}")
                 print(f" - World size: {YELLOW}{get_world_size()}{RESET}")
 
         elif cmd in ["tetos", "version"]:
