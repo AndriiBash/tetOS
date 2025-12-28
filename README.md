@@ -1,11 +1,7 @@
-<img>main_icon</img>
-
-
-
 <div align="center">
+    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/mainIcon.png" alt="screenshot tetOS)" height="500">
 
-# TetOS
-## Welcome to tetOS
+## Welcome!
 
 </div>
 
