@@ -1,30 +1,83 @@
-main_icon
+<img>main_icon</img>
 
-# tetOS
+
+
+<div align="center">
+
+# TetOS
 ## Welcome to tetOS
 
-![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=yellow)
+</div>
 
-**tetOS** is a CLI utility for managing a local Minecraft server. It allows you to get the server status (RAM usage, world weight, count of players, etc.). If desired, send notifications to Telegram via a bot about events on the server, such as players logging in and out or server readiness. The official core of the Minecraft Java server is used for work.
+<div align="center">
+
+  ![Python](https://img.shields.io/badge/Python_Version-3.9.6-yellow?logo=python)
+  ![Python](https://img.shields.io/badge/Telebot--4.29.1-3776AB?&logo=telegram&logoColor=white)
+</div>
+
+<p align="center">
+    <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/AndriiBash/tetOS/blob/main/.github/images/terminalView~dark.png">
+    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/terminalView.png" alt="screenshot tetOS)" height="500">
+    </picture>
+</p>
+
+**TetOS** is a CLI utility for managing a local Minecraft server. It allows you to get the server status (RAM usage, world weight, count of players, etc.). If desired, send notifications to Telegram via a bot about events on the server, such as players logging in and out or server readiness. The official core of the Minecraft Java server is used for work.
 
 Libraries used for tetOS:
-- **psutil** - to control the use of server resources (RAM).  
-- **python-telebot** - for sending notifications to Telegram about events on the server.  
-- **python-dotenv** - configuration of the secure storage component (.env file).
+- `psutil` - to control the use of server resources (RAM).  
+- `python-telebot` - for sending notifications to Telegram about events on the server.  
+- `python-dotenv` - configuration of the secure storage component (.env file).
 
-### Supported Operating Systems
+<div align="center">
+
+## Telegram Bot
+
+</div>
+
+<p align="center">
+    <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/AndriiBash/tetOS/blob/main/.github/images/telegramView~dark.png">
+    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/telegramView.png" alt="screenshot tetOS) telegram" height="500">
+    </picture>
+</p>
+
+How it is worked? The Telegram bot in tetOS is used only for notifications and basic interaction with the server. TetOS controls the Minecraft server (logs, status, events). When an event occurs (server start/stop, player joining/leaving), tetOS sends a message to the Telegram bot. Telegram bot delivers notifications to all registered users.
+
+Scheme Telegram-bot workflow
+```
+User (Telegram)
+      │
+      ▼
+Telegram Bot
+      │
+      ▼
+tetOS (CLI utility)
+ ├── .env           (bot token)
+ ├── tg_users.txt   (subscribed users)
+      │
+      ▼
+Minecraft Java Server
+```
+
+<div align="center">
+
+## Supported Operating Systems
+
 | **OS** | **Build** | **Notes** |
 |:---:|:---:| :---: |
 | **MacOS** | ✅ Full | Tested on OSX Tahoe
 | **Linux** | ⚠️ Partially | Bash script available
 | **Windows** | ❌ WIP | Support coming soon
 
+</div>
 
+<div align="center">
 
+## Basic commands
 
+</div>
 
-
-### Basic commands
 An important point for the utility is the commands, the main commands will look like this
 ```
 info - Show server status (RAM, players, version, etc.)
@@ -37,7 +90,11 @@ mspt - Show MSPT servers
 exit - Exit the utility
 ```
 
-### File System Structure
+<div align="center">
+
+## File System Structure
+
+</div>
 
 The file system structure of the utility will look like this
 
@@ -58,8 +115,13 @@ tetOS/
 └── server.properties         # Minecraft server configuration (port, max-players, etc.)
 ```
 
+<div align="center">
+
 ## Getting Started
-### Installation tetOS
+</div>
+
+### 1. Installation tetOS
+
 
 Clone the repository:
 ```bash
@@ -67,21 +129,21 @@ git clone https://github.com/AndriiBash/tetOS.git
 cd tetOS
 ```
 
-### Install Python dependencies
+### 2. Install Python dependencies
 
 !!no_text!!
 
-### Install Minecraft Java server
+### 3. Install Minecraft Java server
 Download the official Minecraft Java server from the official site. 
 [Download Server](https://www.minecraft.net/en-us/download/server).
 
 
-### Configure server
+### 4. Configure server
 
 !!no_text!!
 
 
-### Run TetOS
+### 5. Run TetOS
 Start the utility using.
 
 MacOS:
