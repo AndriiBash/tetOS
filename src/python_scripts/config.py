@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 # ===== Конфиги =====
-VERSION = "2025.12.24"
+VERSION = "2025.12.28"
 SERVER_DIR = Path(__file__).resolve().parent
 RUN_SCRIPT = SERVER_DIR.parent / "run_server.sh"
 OS_NAME = platform.system()
@@ -46,4 +46,5 @@ SERVER_ONLINE_PLAYERS = 0
 SERVER_MAX_PLAYERS = 1
 SERVER_MAX_RAM_MB = 2048
 SERVER_IP = "0"
+SERVER_LOCAL_IP = "0"
 SERVER_PORT = "0"

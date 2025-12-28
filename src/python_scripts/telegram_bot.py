@@ -13,7 +13,6 @@ import telebot
 import config
 
 from dotenv import load_dotenv
-from telebot.formatting import mcode
 from config import (
     GREEN,
     YELLOW,
@@ -22,7 +21,6 @@ from config import (
     RESET,
     VERSION
     )
-
 
 
 # Иницилизируем бота
@@ -62,7 +60,7 @@ def init_bot():
                 "📖 *TetOS commands*\n\n"
                 "/start — start bot\n"
                 "/info — server info\n"
-                "/status - status server (on/off)"
+                "/status - status server (on/off)\n"
                 "/help — show this message"
             ),
             parse_mode="Markdown"
@@ -84,6 +82,7 @@ def init_bot():
                 f"📦 Version Minecraft: {config.SERVER_MC_VERSION}\n"
                 f"🎮 Online players: {config.SERVER_ONLINE_PLAYERS} / {config.SERVER_MAX_PLAYERS}\n"
                 f"🌐 IP (Hamachi): `{config.SERVER_IP}:{config.SERVER_PORT}`\n"
+                f"📡 IP (Local): `{config.SERVER_LOCAL_IP}:{config.SERVER_PORT}`\n"
             )
 
         config.TELEGRAM_BOT.send_message(
@@ -162,7 +161,8 @@ def notify_server_ready():
     broadcast(
         f"🟢 *Minecraft server started*\n\n"
         f"📦 Verison Minecraft: {config.SERVER_MC_VERSION}\n"
-        f"🌐 IP (Hamachi): `{config.SERVER_IP}:{config.SERVER_PORT}`\n",
+        f"🌐 IP (Hamachi): `{config.SERVER_IP}:{config.SERVER_PORT}`\n"
+        f"📡 IP (Local): `{config.SERVER_LOCAL_IP}:{config.SERVER_PORT}`\n"
         )
 
 # ===== Уведомляем про остановку сервера =====
