@@ -1,7 +1,7 @@
 <div align="center">
     <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/mainIcon.png" alt="screenshot tetOS)" height="500">
 
-## Welcome!
+## TetOS — manage your Minecraft server with ease!
 
 </div>
 
