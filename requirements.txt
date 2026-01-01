@@ -6,6 +6,6 @@
 # Project:     TetOS (github.com/AndriiBash/tetOS)
 # ==============================================================================
 
-psutil>=5.9
-python-telebot>=4.29
-python-dotenv>=1.0
+psutil
+pyTelegramBotAPI
+python-dotenv
