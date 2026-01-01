@@ -19,6 +19,7 @@ VERSION = "2026.1.1"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SERVER_DIR = PROJECT_ROOT / "server"
 RUN_SCRIPT = PROJECT_ROOT / "src" / "run_server.sh"
+ENV_PATH = PROJECT_ROOT / ".env"
 OS_NAME = platform.system()
 if OS_NAME in ["Linux", "Darwin"]:
     GREEN = "\033[32m"

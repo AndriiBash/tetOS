@@ -19,13 +19,14 @@ from config import (
     RED,
     CYAN,
     RESET,
-    VERSION
+    VERSION,
+    ENV_PATH
     )
 
 
 # Иницилизируем бота
 def init_bot():
-    load_dotenv()
+    load_dotenv(ENV_PATH)
     config.TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
     
     if not config.TELEGRAM_TOKEN:
