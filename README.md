@@ -119,6 +119,25 @@ tetOS/                        # Repository root
 <div align="center">
 
 ## Getting Started
+
+</div>
+
+<div align="center">
+
+## Automatical 
+
+</div>
+
+[Download the TetOS installer](https://github.com/AndriiBash/tetOS/blob/main/installers/macOS%3ALinux/installer.sh) from the official GitHub repository, and start script.
+```bash
+chmode +x ./installer.sh
+./installer.sh
+```
+
+<div align="center">
+
+## Manual installation 
+
 </div>
 
 ### 1. Installation tetOS
