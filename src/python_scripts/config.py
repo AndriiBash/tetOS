@@ -15,9 +15,10 @@ from pathlib import Path
 
 
 # ===== Конфиги =====
-VERSION = "2025.12.28"
-SERVER_DIR = Path(__file__).resolve().parent
-RUN_SCRIPT = SERVER_DIR.parent / "run_server.sh"
+VERSION = "2026.1.1"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+SERVER_DIR = PROJECT_ROOT / "server"
+RUN_SCRIPT = PROJECT_ROOT / "src" / "run_server.sh"
 OS_NAME = platform.system()
 if OS_NAME in ["Linux", "Darwin"]:
     GREEN = "\033[32m"

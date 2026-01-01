@@ -144,7 +144,7 @@ def restart_server():
 
 # ===== Функция для чтения max-players из server.properties =====
 def get_max_players():
-    props_file = config.SERVER_DIR.parent / "server.properties"
+    props_file = config.SERVER_DIR / "server.properties"
     if not props_file.exists():
         return 1
     try:
@@ -158,8 +158,9 @@ def get_max_players():
 
 
 # ===== Функция для чтения максимальной RAM из run_server.sh =====
+# need fix!!!
 def get_max_ram_mb():
-    script_file = config.SERVER_DIR.parent / "run_server.sh"
+    script_file = config.RUN_SCRIPT
     if not script_file.exists():
         return 4096  # дефолт, если файла нет
     try:
@@ -206,7 +207,7 @@ def get_local_ip() -> str:
 
 # ===== Функция для расчёта размера мира =====
 def get_world_size():
-    world_dir = config.SERVER_DIR.parent / "world"
+    world_dir = config.SERVER_DIR / "world"
     if not world_dir.exists():
         return "Unknown"
     total_size = 0
@@ -310,6 +311,9 @@ def print_tps_info(mode="all"):
 # ===== Выводим основную информацию про сервер в терминал =====
 def print_server_info():
     print(f"📋 Server Info:")
+
+    config.SERVER_MAX_PLAYERS = get_max_players()
+    config.SERVER_MAX_RAM_MB = get_max_ram_mb()
 
     if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
         print(f" - Status: {RED}Not running{RESET}")
