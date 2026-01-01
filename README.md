@@ -108,6 +108,7 @@ tetOS/
 ├── telegram_cache/           # Telegram dir
 │   └── tg_users.txt          # Telegram user cache
 ├── world                     # Minecraft world dir
+├── requirements.txt          # Python requirements for running TetOS 
 └── server.properties         # Minecraft server configuration (port, max-players, etc.)
 ```
 
@@ -127,7 +128,10 @@ cd tetOS
 
 ### 2. Install Python dependencies
 
-!!no_text!!
+Install dependencies using pip:
+```bash
+pip install -r requirements.txt
+```
 
 ### 3. Install Minecraft Java server
 Download the official Minecraft Java server from the official site. 
@@ -136,25 +140,39 @@ Download the official Minecraft Java server from the official site.
 
 ### 4. Configure server
 
-!!no_text!!
+1. Move the downloaded server file (e.g.,`server.jar`) into the folder where `tetOS` is located.  
 
+2. Execute `server.jar`:  
+
+```bash
+java -jar server.jar
+```
+
+3. After this, you need to accept the license agreement to start the server. Go to the `eula.txt` file and change `eula=false` to `eula=true`. Use this command to do so:
+
+**MacOS/Linux:**
+```bash
+sed -i.bak 's/eula=false/eula=true/' eula.txt && rm eula.txt.bak
+```
+**Windows:**
+```bash
+Null
+```
 
 ### 5. Run TetOS
 Start the utility using.
 
-MacOS:
-```
+**MacOS/Linux:**
+```bash
 cd tetOS
 ./run.sh
 ```
-
-Linux:
-```
-cd tetOS
-bash run.sh
+*Make sure run.sh is executable:*
+```bash
+chmod +x run.sh
 ```
 
-Windows:
-```
+**Windows:**
+```bash
 Null
 ```
