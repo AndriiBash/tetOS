@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/mainIcon.png" alt="screenshot tetOS)" height="500">
+    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/mainIcon.png" alt="screenshot tetOS)">
 
 ## TetOS — manage your Minecraft server with ease!
 
@@ -14,7 +14,7 @@
 <p align="center">
     <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/AndriiBash/tetOS/blob/main/.github/images/terminalView~dark.png">
-    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/terminalView.png" alt="screenshot tetOS)" height="500">
+    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/terminalView.png" alt="screenshot tetOS)">
     </picture>
 </p>
 
@@ -34,7 +34,7 @@ Libraries used for tetOS:
 <p align="center">
     <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/AndriiBash/tetOS/blob/main/.github/images/telegramView~dark.png">
-    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/telegramView.png" alt="screenshot tetOS) telegram" height="500">
+    <img src="https://github.com/AndriiBash/tetOS/blob/main/.github/images/telegramView.png" alt="screenshot tetOS) telegram">
     </picture>
 </p>
 
