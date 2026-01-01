@@ -63,7 +63,7 @@ Minecraft Java Server
 | **OS** | **Build** | **Notes** |
 |:---:|:---:| :---: |
 | **MacOS** | ✅ Full | Tested on OSX Tahoe
-| **Linux** | ⚠️ Partially | Bash script available
+| **Linux** | ✅ Full | Tested on Linux Arch
 | **Windows** | ❌ WIP | Support coming soon
 
 </div>
