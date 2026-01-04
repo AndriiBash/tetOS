@@ -164,7 +164,7 @@ Download the official Minecraft Java server from the official site.
 
 1. Move the downloaded server file (e.g.,`server.jar`) into the `server/` folder (example: `tetOS/server/server.jar`).
 
-⚠️ *Important: If the `server/` folder does not exist, you need to create it manually.*
+> ⚠️ *Important: If the `server/` folder does not exist, you need to create it manually.*
 
 2. Execute `server.jar`:  
 
@@ -207,7 +207,7 @@ cd ../
 ```bash
 Null
 ```
-*⚠️ Make sure `run.sh` is executable:*
+> *⚠️ Make sure `run.sh` is executable:*
 ```bash
 chmod +x run.sh
 ```
