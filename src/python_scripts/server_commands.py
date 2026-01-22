@@ -13,6 +13,7 @@ import threading
 import platform
 import config
 
+from typing import Optional
 from config import (
     GREEN,
     YELLOW,
@@ -158,7 +159,6 @@ def get_max_players():
 
 
 # ===== Функция для чтения максимальной RAM из run_server.sh =====
-# need fix!!!
 def get_max_ram_mb():
     script_file = config.RUN_SCRIPT
     if not script_file.exists():
@@ -288,6 +288,217 @@ def fetch_tps():
             break
 
     return tps, mspt
+
+
+# ===== Функция для парсинга ввода команды set для RAM(min, max) =====
+def parse_ram_value(value: str) -> Optional[int]:
+    value = value.strip().upper()
+    try:
+        if value.endswith(("GB", "G")):
+            return int(value.rstrip("GB").rstrip("G")), "G"
+        if value.endswith(("MB", "M")):
+            return int(value.rstrip("MB").rstrip("M")), "M"
+        # если без суффикса — считаем как GB
+        return int(value), "G"
+    except ValueError:
+        return None
+
+
+# ===== Функция для обновления значения RAM сервера =====
+def update_run_script_ram(run_script: config.RUN_SCRIPT, ram_min_mb=None, ram_max_mb=None, ram_min_unit="M", ram_max_unit="M"):
+    if not run_script.exists():
+        print(f"{RED}run_server.sh not found!{RESET}")
+        return False
+
+    content = run_script.read_text()
+    import re
+
+    match = re.search(r"exec java .*", content)
+    if not match:
+        print(f"{RED}Cannot find java exec line in run_server.sh{RESET}")
+        return False
+
+    old_line = match.group(0)
+    new_line = old_line
+
+    # Обновляем min RAM
+    if ram_min_mb is not None:
+        new_line = re.sub(r"-Xms\S+", f"-Xms{ram_min_mb}{ram_min_unit}", new_line)
+
+    # Обновляем max RA
+    if ram_max_mb is not None:
+        new_line = re.sub(r"-Xmx\S+", f"-Xmx{ram_max_mb}{ram_max_unit}", new_line)
+
+    content = content.replace(old_line, new_line)
+    run_script.write_text(content)
+
+    # Выводим в одну строку
+    parts = []
+    if ram_min_mb is not None:
+        parts.append(f"min: {ram_min_mb}{ram_min_unit}")
+    if ram_max_mb is not None:
+        parts.append(f"max: {ram_max_mb}{ram_max_unit}")
+
+    print(f"{GREEN}Updated RAM in run_server.sh: {'; '.join(parts)}{RESET}")
+
+    return True
+
+
+# ===== Функция для получения значения min/max RAM из run_server.sh  =====
+def get_current_ram_value(which="min"):
+    content = config.RUN_SCRIPT.read_text()
+    import re
+    if which == "min":
+        match = re.search(r"-Xms(\d+[MG])", content, re.IGNORECASE)
+    else:
+        match = re.search(r"-Xmx(\d+[MG])", content, re.IGNORECASE)
+    if match:
+        val = match.group(1).upper()
+        number = int(val[:-1])
+        unit = val[-1]
+        return number, unit
+    return None, None
+
+
+# ===== Функция для обработки команды set =====
+def handle_set_command(args: list):
+    gamemodes = "|".join(config.AVAILABLE_GAME_MODES)
+    difficulties = "|".join(config.AVAILABLE_DIFFICULTIES)
+
+    if len(args) != 2:
+        print(f"{YELLOW}Usage: set <option> <value>{RESET}")
+        print("Options:")
+        print(f"  max-players  {CYAN}<1-999>{RESET}         - Set the maximum count of players on the server")
+        print(f"  motd         {CYAN}<text>{RESET}          - Set the server MOTD (message of the day/server name)")
+        print(f"  gamemode     {CYAN}<{gamemodes}>{RESET}   - Set default game mode")
+        print(f"  difficulty   {CYAN}<{difficulties}>{RESET}- Set server difficulty")
+        print(f"  ram-min      {CYAN}<GB|MB>{RESET}         - Set minimum RAM (e.g., 1G, 1024M)")
+        print(f"  ram-max      {CYAN}<GB|MB>{RESET}         - Set maximum RAM (e.g., 4G, 4096M)")
+        print(f"  notify       {CYAN}<on|off>{RESET}        - Enable/disable Telegram notifications")
+        print(f"  tocken       {CYAN}<your:tocken>{RESET}   - For work Telegram notifications")
+        print(f"\nExamples: {CYAN}set gamemode creative{RESET}, {CYAN}set ram-max 4G{RESET}")
+        return 
+
+    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+        print(f"{RED}❌ Cannot change settings while the server is running! Stop the server first, use 'stop'.{RESET}")
+        return
+
+    option = args[0].lower()
+    value = ' '.join(args[1:])
+
+    # ===== Проверка валидности и обработка =====
+    if option == "max-players":
+        try:
+            val = int(value)
+            if 1 <= val <= 999:
+                update_server_property("max-players", str(val))
+                config.SERVER_MAX_PLAYERS = val
+            else:
+                print(f"{RED}❌ Value must be between 1 and 999{RESET}")
+        except ValueError:
+            print(f"{RED}❌ Invalid number: {value}{RESET}")
+    
+    elif option == "motd":
+        update_server_property("motd", value)
+
+    elif option == "gamemode":
+        if value.lower() in config.AVAILABLE_GAME_MODES:
+            update_server_property("gamemode", value.lower())
+            config.SERVER_GAME_MODE = value.lower()
+        else:
+            print(f"{RED}❌ Invalid gamemode. Choose: {gamemodes}{RESET}")
+
+    elif option == "difficulty":
+        if value.lower() in config.AVAILABLE_DIFFICULTIES:
+            update_server_property("difficulty", value.lower())
+            config.SERVER_GAME_MODE = value.lower()
+        else:
+            print(f"{RED}❌ Invalid difficulty. Choose: {difficulties}{RESET}")
+
+    elif option == "ram-min":
+        parsed = parse_ram_value(value)
+        if parsed is None:
+            print(f"{RED}Invalid RAM value{RESET}")
+            return
+        ram_value, ram_unit = parsed
+
+        current_max_value, current_max_unit = get_current_ram_value("max")
+        if current_max_value is not None:
+            # Конвертируем в МБ для сравнения
+            ram_min_mb = ram_value * (1024 if ram_unit.upper() == "G" else 1)
+            ram_max_mb = current_max_value * (1024 if current_max_unit.upper() == "G" else 1)
+            if ram_min_mb > ram_max_mb:
+                print(f"{RED}❌ Cannot set min RAM greater than current max RAM ({current_max_value}{current_max_unit}){RESET}")
+                return
+
+        update_run_script_ram(config.RUN_SCRIPT, ram_min_mb=ram_value, ram_min_unit=ram_unit)
+
+    elif option == "ram-max":
+        parsed = parse_ram_value(value)
+        if parsed is None:
+            print(f"{RED}Invalid RAM value{RESET}")
+            return
+        ram_value, ram_unit = parsed
+
+        # Берём текущий min из run_server.sh
+        current_min_value, current_min_unit = get_current_ram_value("min")
+        if current_min_value is not None:
+            ram_min_mb = current_min_value * (1024 if current_min_unit.upper() == "G" else 1)
+            ram_max_mb = ram_value * (1024 if ram_unit.upper() == "G" else 1)
+            if ram_max_mb < ram_min_mb:
+                print(f"{RED}❌ Cannot set max RAM smaller than current min RAM ({current_min_value}{current_min_unit}){RESET}")
+                return
+
+        update_run_script_ram(config.RUN_SCRIPT, ram_max_mb=ram_value, ram_max_unit=ram_unit)
+
+    elif option == "notify":
+        # W.I.P
+        print("notify")
+    
+    else:
+        print(f"{RED}❌ Unknown option: {option}{RESET}")
+
+
+# ===== Функция обновления server.properties =====
+def update_server_property(option: str, value: str):
+    props_file = config.SERVER_DIR / "server.properties"
+    if not props_file.exists():
+        print(f"{RED}server.properties not found at {props_file}{RESET}")
+        return False
+
+    updated = False
+    lines = []
+    with open(props_file, "r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped.startswith(option + "="):
+                lines.append(f"{option}={value}\n")
+                updated = True
+            else:
+                lines.append(line)
+
+    if not updated:
+        # если ключ не найден, добавляем его в конец
+        lines.append(f"{option}={value}\n")
+
+    try:
+        with open(props_file, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        print(f"{GREEN}Updated server property: {option}={value}{RESET}")
+        return True
+    except Exception as e:
+        print(f"{RED}Failed to write server.properties: {e}{RESET}")
+        return False
+
+
+# ===== Команда для вывода IP сервера =====
+def print_ip_server():
+    if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
+        print(f"{YELLOW}Server is not running! Use 'start' to launch.{RESET}")
+        return
+
+    print(f"🌐 IP (Hamachi): {config.SERVER_IP}:{config.SERVER_PORT}")
+    print(f"📡 IP (Local): {config.SERVER_LOCAL_IP}:{config.SERVER_PORT}")        
 
 
 # ===== Команда для получения и вывода TPS и MSPT =====

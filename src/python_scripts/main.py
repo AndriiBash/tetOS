@@ -107,9 +107,15 @@ try:
         elif cmd == "mspt":
             server_commands.print_tps_info("mspt")
 
+        elif cmd == "get-ip":
+            server_commands.print_ip_server()
+
+        elif cmd == "set":
+            server_commands.handle_set_command(args)
+
         else:
             if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
-                config.SERVER_PROCESS.stdin.write(cmd + "\n")
+                config.SERVER_PROCESS.stdin.write(cmd_input + "\n")
                 config.SERVER_PROCESS.stdin.flush()
             else:
                 print(f"{YELLOW}Server is not running! Use 'start' to launch.{RESET}")

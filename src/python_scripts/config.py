@@ -14,8 +14,8 @@ import platform
 from pathlib import Path
 
 
-# ===== Конфиги =====
-VERSION = "2026.1.1"
+# ===== Конфиги TetOS =====
+VERSION = "2026.1.22"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SERVER_DIR = PROJECT_ROOT / "server"
 RUN_SCRIPT = PROJECT_ROOT / "src" / "run_server.sh"
@@ -50,3 +50,19 @@ SERVER_MAX_RAM_MB = 2048
 SERVER_IP = "0"
 SERVER_LOCAL_IP = "0"
 SERVER_PORT = "0"
+
+
+# ===== Настройки для Minecraft =====
+AVAILABLE_GAME_MODES = [
+    "survival",
+    "creative",
+    "adventure",
+    "spectator",
+]
+
+AVAILABLE_DIFFICULTIES = [
+    "peaceful",
+    "easy",
+    "normal",
+    "hard",
+]
