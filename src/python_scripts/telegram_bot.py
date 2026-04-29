@@ -33,8 +33,16 @@ def init_bot():
         print("❌ TELEGRAM_TOKEN not found in .env")
         return False
 
-    config.TELEGRAM_BOT = telebot.TeleBot(config.TELEGRAM_TOKEN)
+    try:
+        config.TELEGRAM_BOT = telebot.TeleBot(config.TELEGRAM_TOKEN)
 
+        bot_info = config.TELEGRAM_BOT.get_me()
+
+        print(f"{GREEN}✅ Telegram bot connected: @{bot_info.username}{RESET}")
+
+    except Exception as e:
+        print(f"{RED}❌ Telegram bot auth failed: {e}{RESET}")
+        return False
 
     # Обработка команд в Telegram боте
     # Обработка /start

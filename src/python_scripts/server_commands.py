@@ -76,9 +76,22 @@ def get_server_port(default_port=25565) -> int:
     return default_port
 
 
+# ===== Функция для проверки запуска сервера =====
+def is_server_running() -> bool:
+    return (
+        config.SERVER_PROCESS is not None
+        and config.SERVER_PROCESS.poll() is None
+    )
+
+
+# ===== Функция для проверки остановленного сервера =====
+def is_server_stopped() -> bool:
+    return not is_server_running()
+
+
 # ===== Функция для запуска сервера =====
 def start_server(hard: bool = False):
-    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+    if is_server_running():
         print(f"{YELLOW}Server is already running!{RESET}")
         return
 
@@ -109,7 +122,7 @@ def start_server(hard: bool = False):
 
 # ===== Функция для остановки сервера =====
 def stop_server(silent: bool = False):
-    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+    if is_server_running():
         print(f"{RED}🛑 Stopping server...{RESET}")
         config.SERVER_PROCESS.stdin.write("stop\n")
         config.SERVER_PROCESS.stdin.flush()
@@ -132,7 +145,7 @@ def stop_server(silent: bool = False):
 
 # ===== Функция для перезапуска сервера =====
 def restart_server():
-    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+    if is_server_running():
         print(f"{YELLOW}🔄 Restarting server...{RESET}")
         stop_server(silent=True)
         start_server()
@@ -223,7 +236,7 @@ def get_world_size():
 
 # ===== Функция для used RAM =====
 def get_used_ram():
-    if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
+    if is_server_stopped():
         return "0 MB"
     try:
         import psutil
@@ -263,7 +276,7 @@ def colorize_mspt(mspt: float) -> str:
 
 # ===== Функция для расчёта TPS и MSPT (только возвращает значения) =====
 def fetch_tps():
-    if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
+    if is_server_stopped():
         return 0.0, 0.0
 
     import re
@@ -376,10 +389,13 @@ def handle_set_command(args: list):
         print(f"  ram-max      {CYAN}<GB|MB>{RESET}         - Set maximum RAM (e.g., 4G, 4096M)")
         print(f"  notify       {CYAN}<on|off>{RESET}        - Enable/disable Telegram notifications")
         print(f"  tocken       {CYAN}<your:tocken>{RESET}   - For work Telegram notifications")
-        print(f"\nExamples: {CYAN}set gamemode creative{RESET}, {CYAN}set ram-max 4G{RESET}")
+        print(f"\nExamples:")
+        print(f"{CYAN}  set gamemode creative{RESET}")
+        print(f"{CYAN}  set ram-max 4G{RESET}")
+        print(f"{CYAN}  set max-players 4{RESET}")
         return 
 
-    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+    if is_server_running():
         print(f"{RED}❌ Cannot change settings while the server is running! Stop the server first, use 'stop'.{RESET}")
         return
 
@@ -493,7 +509,7 @@ def update_server_property(option: str, value: str):
 
 # ===== Команда для вывода IP сервера =====
 def print_ip_server():
-    if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
+    if is_server_stopped():
         print(f"{YELLOW}Server is not running! Use 'start' to launch.{RESET}")
         return
 
@@ -503,7 +519,7 @@ def print_ip_server():
 
 # ===== Команда для получения и вывода TPS и MSPT =====
 def print_tps_info(mode="all"):
-    if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
+    if is_server_stopped():
         print(f"{YELLOW}Server is not running! Use 'start' to launch.{RESET}")
         return
 
@@ -519,6 +535,26 @@ def print_tps_info(mode="all"):
         print(f"⚡ TPS: {tps_color}{tps:.2f}{RESET} | 🕓 MSPT: {mspt_color}{mspt:.2f} ms{RESET}")
 
 
+# ===== Команда для help-сообщения (помощи) =====
+def print_help_server():
+    print(f"====== TetOS command list ======")
+    print(f"{YELLOW}info{RESET} - Show server status (RAM, players, version, etc.)")
+    print(f"{YELLOW}start{RESET} - Start the server (optional: --hard for hard start)")
+    print(f"{YELLOW}stop{RESET} - Stop the server")
+    print(f"{YELLOW}help{RESET} - Show help menu")
+    print(f"{YELLOW}restart{RESET} - Restart the server")
+    print(f"{YELLOW}clear/cls{RESET} - Clear the terminal")
+    print(f"{YELLOW}tps{RESET} - Show server TPS")
+    print(f"{YELLOW}mspt{RESET} - Show MSPT servers")
+    print(f"{YELLOW}set{RESET} - For set server properties")
+    print(f"{YELLOW}exit{RESET} - Exit the utility")
+
+    if is_server_running():
+        print("====== Minecraft server commands ======")
+        config.SERVER_PROCESS.stdin.write("help\n")
+        config.SERVER_PROCESS.stdin.flush()
+
+
 # ===== Выводим основную информацию про сервер в терминал =====
 def print_server_info():
     print(f"📋 Server Info:")
@@ -526,7 +562,7 @@ def print_server_info():
     config.SERVER_MAX_PLAYERS = get_max_players()
     config.SERVER_MAX_RAM_MB = get_max_ram_mb()
 
-    if config.SERVER_PROCESS is None or config.SERVER_PROCESS.poll() is not None:
+    if is_server_stopped():
         print(f" - Status: {RED}Not running{RESET}")
         print(f" - Minecraft version: {YELLOW}Unknown{RESET}")
         print(f" - Game mode: {YELLOW}Unknown{RESET}")
@@ -545,7 +581,7 @@ def print_server_info():
 
 # ===== Функция выхода из утилиты =====
 def exit_utility():
-    if config.SERVER_PROCESS is not None and config.SERVER_PROCESS.poll() is None:
+    if is_server_running():
         print(f"{RED}🛑 Stopping server before exiting...{RESET}")
         stop_server()
     clear_terminal()

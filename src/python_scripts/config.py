@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 # ===== Конфиги TetOS =====
-VERSION = "2026.1.22"
+VERSION = "2026.4.29"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SERVER_DIR = PROJECT_ROOT / "server"
 RUN_SCRIPT = PROJECT_ROOT / "src" / "run_server.sh"

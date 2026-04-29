@@ -79,6 +79,11 @@ if [ ! -f "$ENV_FILE" ]; then
     echo 'TELEGRAM_TOKEN="PUT_YOUR_TELEGRAM:TOKEN_HERE"' > "$ENV_FILE"
 fi
 
+# ====== 8. Clean ======
+echo "🧹 Removing installer files..."
+rm -rf "$TETOS_DIR/installers"
+
+
 # ====== DONE ======
 echo ""
 echo "=========================================="
