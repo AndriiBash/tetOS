@@ -76,6 +76,20 @@ def get_server_port(default_port=25565) -> int:
     return default_port
 
 
+# ===== Функция для получения статуса телеграм бота =====
+def get_telegram_bot_status() -> str:
+    try:
+        if config.TELEGRAM_BOT is None:
+            return f"{YELLOW}Disabled{RESET}"
+
+        bot_info = config.TELEGRAM_BOT.get_me()
+
+        return f"{GREEN}Connected (@{bot_info.username}){RESET}"
+
+    except Exception:
+        return f"{RED}Invalid token / connection failed{RESET}"
+
+
 # ===== Функция для проверки запуска сервера =====
 def is_server_running() -> bool:
     return (
@@ -87,6 +101,29 @@ def is_server_running() -> bool:
 # ===== Функция для проверки остановленного сервера =====
 def is_server_stopped() -> bool:
     return not is_server_running()
+
+
+# ===== Функция для cета значнеия в .env файле =====
+def update_env_variable(key: str, value: str):
+    lines = []
+    updated = False
+
+    # если .env существует
+    if config.ENV_PATH.exists():
+        with open(config.ENV_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith(f"{key}="):
+                    lines.append(f"{key}={value}\n")
+                    updated = True
+                else:
+                    lines.append(line)
+
+    # если ключа нет
+    if not updated:
+        lines.append(f"{key}={value}\n")
+
+    with open(config.ENV_PATH, "w", encoding="utf-8") as f:
+        f.writelines(lines)
 
 
 # ===== Функция для запуска сервера =====
@@ -378,21 +415,22 @@ def handle_set_command(args: list):
     gamemodes = "|".join(config.AVAILABLE_GAME_MODES)
     difficulties = "|".join(config.AVAILABLE_DIFFICULTIES)
 
-    if len(args) != 2:
+    if len(args) < 2:
         print(f"{YELLOW}Usage: set <option> <value>{RESET}")
         print("Options:")
-        print(f"  max-players  {CYAN}<1-999>{RESET}         - Set the maximum count of players on the server")
-        print(f"  motd         {CYAN}<text>{RESET}          - Set the server MOTD (message of the day/server name)")
-        print(f"  gamemode     {CYAN}<{gamemodes}>{RESET}   - Set default game mode")
-        print(f"  difficulty   {CYAN}<{difficulties}>{RESET}- Set server difficulty")
-        print(f"  ram-min      {CYAN}<GB|MB>{RESET}         - Set minimum RAM (e.g., 1G, 1024M)")
-        print(f"  ram-max      {CYAN}<GB|MB>{RESET}         - Set maximum RAM (e.g., 4G, 4096M)")
-        print(f"  notify       {CYAN}<on|off>{RESET}        - Enable/disable Telegram notifications")
-        print(f"  tocken       {CYAN}<your:tocken>{RESET}   - For work Telegram notifications")
+        print(f"  max-players  {CYAN}<1-999>{RESET}          - Set the maximum count of players on the server")
+        print(f"  motd         {CYAN}<text>{RESET}           - Set the server MOTD (message of the day/server name)")
+        print(f"  gamemode     {CYAN}<{gamemodes}>{RESET}    - Set default game mode")
+        print(f"  difficulty   {CYAN}<{difficulties}>{RESET} - Set server difficulty")
+        print(f"  ram-min      {CYAN}<GB|MB>{RESET}          - Set minimum RAM (e.g., 1G, 1024M)")
+        print(f"  ram-max      {CYAN}<GB|MB>{RESET}          - Set maximum RAM (e.g., 4G, 4096M)")
+        print(f"  notify       {CYAN}<on|off>{RESET}         - Enable/disable Telegram notifications")
+        print(f"  token        {CYAN}<your:token>{RESET}     - For work Telegram notifications")
         print(f"\nExamples:")
         print(f"{CYAN}  set gamemode creative{RESET}")
         print(f"{CYAN}  set ram-max 4G{RESET}")
         print(f"{CYAN}  set max-players 4{RESET}")
+        print(f"{CYAN}  set motd Hello, it's TetOS 2O26!{RESET}")
         return 
 
     if is_server_running():
@@ -468,11 +506,23 @@ def handle_set_command(args: list):
         update_run_script_ram(config.RUN_SCRIPT, ram_max_mb=ram_value, ram_max_unit=ram_unit)
 
     elif option == "notify":
-        # W.I.P
-        print("notify")
+        val = value.lower().strip()
     
-    else:
-        print(f"{RED}❌ Unknown option: {option}{RESET}")
+        if val in ["on", "enable", "enabled"]:
+            config.TELEGRAM_BOT_NOTIFICATION = True
+            update_env_variable("TELEGRAM_BOT_NOTIFICATION", "true")
+            print(f"{GREEN}✅ Telegram notifications enabled{RESET}")
+            
+        elif val in ["off", "disable", "disabled"]:
+            config.TELEGRAM_BOT_NOTIFICATION = False
+            update_env_variable("TELEGRAM_BOT_NOTIFICATION", "false")
+            print(f"{YELLOW}🔕 Telegram notifications disabled{RESET}")
+            
+        else:
+            print(f"{RED}❌ Invalid value. Use: set notify <on|off>{RESET}")
+
+    elif option == "token":
+        update_env_variable("TELEGRAM_TOKEN", value)
 
 
 # ===== Функция обновления server.properties =====
@@ -546,7 +596,7 @@ def print_help_server():
     print(f"{YELLOW}clear/cls{RESET} - Clear the terminal")
     print(f"{YELLOW}tps{RESET} - Show server TPS")
     print(f"{YELLOW}mspt{RESET} - Show MSPT servers")
-    print(f"{YELLOW}set{RESET} - For set server properties")
+    print(f"{YELLOW}set{RESET} - Set server properties (max-ram, gamemode, telegram notify, etc.)")
     print(f"{YELLOW}exit{RESET} - Exit the utility")
 
     if is_server_running():
@@ -569,14 +619,17 @@ def print_server_info():
         print(f" - Online players: {YELLOW}0 / {config.SERVER_MAX_PLAYERS}{RESET}")
         print(f" - Used RAM: {YELLOW}0 MB / {config.SERVER_MAX_RAM_MB} MB{RESET}")
         print(f" - World size: {YELLOW}Unknown{RESET}")
+        print(f" - Telegram bot: {CYAN}{get_telegram_bot_status()} {RESET}")
     else:
         status = f"{GREEN}Running (ready){RESET}" if config.SERVER_IS_READY else f"{YELLOW}Running (starting...){RESET}"
+        bot_info = config.TELEGRAM_BOT.get_me()
         print(f" - Status: {status}")
         print(f" - Minecraft version: {YELLOW}{config.SERVER_MC_VERSION}{RESET}")
         print(f" - Game mode: {YELLOW}{config.SERVER_GAME_MODE}{RESET}")
         print(f" - Online players: {GREEN}{config.SERVER_ONLINE_PLAYERS} / {config.SERVER_MAX_PLAYERS}{RESET}")
         print(f" - Used RAM: {YELLOW}{get_used_ram()} / {config.SERVER_MAX_RAM_MB} MB{RESET}")
         print(f" - World size: {YELLOW}{get_world_size()}{RESET}")
+        print(f" - Telegram bot: {CYAN}{get_telegram_bot_status()} {RESET}")
 
 
 # ===== Функция выхода из утилиты =====
@@ -627,4 +680,3 @@ def read_output(process):
                     broadcast(f"🔚 {username} left the game!")
     except ValueError:
         pass
-

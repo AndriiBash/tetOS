@@ -38,29 +38,41 @@ except ImportError as e:
 # ===== Основная CLI петля =====
 server_commands.clear_terminal()
 banner = f"""{RED}
-  _____          _      {RESET}___    ____  {RED}
- |_   _|   ___  | |_   {RESET}/ _ \  / ___| {RED}
-   | |    / _ \ | __| {RESET}| | | | \___ \ {RED}
-   | |   |  __/ | |_  {RESET}| |_| |  ___) |{RED}
-   |_|    \___|  \__|  {RESET}\___/  |____/ {RESET}
+      _____          _      {RESET}___    ____  {RED}
+     |_   _|   ___  | |_   {RESET}/ _ \  / ___| {RED}
+       | |    / _ \ | __| {RESET}| | | | \___ \ {RED}
+       | |   |  __/ | |_  {RESET}| |_| |  ___) |{RED}
+       |_|    \___|  \__|  {RESET}\___/  |____/ {RESET}
    """
 
 bot_success = False
 if config.TELEGRAM_AVAILABLE:
     bot_success = init_bot()
 
-bot_status = "true" if (config.TELEGRAM_AVAILABLE and bot_success) else "false" if config.TELEGRAM_AVAILABLE else "off"
-bot_color = GREEN if (config.TELEGRAM_AVAILABLE and bot_success) else RED if config.TELEGRAM_AVAILABLE else YELLOW
-
 info_line = f"Version: {YELLOW}{VERSION}{RESET}"
-status_line = f"Telegram notifications: {bot_color}{bot_status}{RESET}"
 
-max_len = max(len(info_line), len(status_line)) + 4
+if not config.TELEGRAM_AVAILABLE:
+    tg_color = RED
+    tg_available = "not available"
+else:
+    tg_color = GREEN
+    tg_available = "available"
+
+if config.TELEGRAM_BOT_NOTIFICATION:
+    tg_color_available = GREEN
+    tg_status = "(on)"
+else:
+    tg_color_available = RED
+    tg_status = "(off)"
+
+status_line = f"Telegram notifications: {tg_color}{tg_available} {tg_color_available}{tg_status}{RESET}"
+
+max_len = max(len(info_line), len(status_line)) - 6
 print(banner)
-print(f"┌{'─' * (max_len - 5)}┐")
-print(f"│  {info_line.center(max_len)}  │")
-print(f"│  {status_line.center(max_len)}  │")
-print(f"└{'─' * (max_len - 5)}┘\n")
+print(f"┌{'─' * (max_len - 3)}┐")
+print(f"│  {info_line.center(max_len)}    │")
+print(f"│  {status_line.center(max_len)}   │")
+print(f"└{'─' * (max_len - 3)}┘\n")
 
 if not config.TELEGRAM_AVAILABLE:
     print(f"{RED}🔕 Telegram notifications disabled (missing telegram_bot.py or libraries){RESET}")

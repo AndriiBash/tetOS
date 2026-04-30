@@ -29,6 +29,9 @@ def init_bot():
     load_dotenv(ENV_PATH)
     config.TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
     
+    notifications_str = os.getenv("TELEGRAM_BOT_NOTIFICATION", "false").lower().strip()
+    config.TELEGRAM_BOT_NOTIFICATION = notifications_str in ("true", "1", "on", "yes") 
+
     if not config.TELEGRAM_TOKEN:
         print("❌ TELEGRAM_TOKEN not found in .env")
         return False
@@ -36,12 +39,11 @@ def init_bot():
     try:
         config.TELEGRAM_BOT = telebot.TeleBot(config.TELEGRAM_TOKEN)
 
-        bot_info = config.TELEGRAM_BOT.get_me()
-
-        print(f"{GREEN}✅ Telegram bot connected: @{bot_info.username}{RESET}")
+        #bot_info = config.TELEGRAM_BOT.get_me()
+        #print(f"{GREEN}✅ Telegram bot connected: @{bot_info.username}{RESET}")
 
     except Exception as e:
-        print(f"{RED}❌ Telegram bot auth failed: {e}{RESET}")
+        #print(f"{RED}❌ Telegram bot auth failed: {e}{RESET}")
         return False
 
     # Обработка команд в Telegram боте
@@ -156,7 +158,7 @@ def save_user(user_id):
 
 # ===== Уведомляем всех Telegram юзеров =====
 def broadcast(message, parse_mode="Markdown"):
-    if config.TELEGRAM_BOT is None:
+    if config.TELEGRAM_BOT is None or config.TELEGRAM_BOT_NOTIFICATION is False:
         return
     for user_id in load_users():
         try:
@@ -167,6 +169,9 @@ def broadcast(message, parse_mode="Markdown"):
 
 # ===== Уведомляем про запуск сервера =====
 def notify_server_ready():
+    if not config.TELEGRAM_BOT_NOTIFICATION:
+        return
+
     broadcast(
         f"🟢 *Minecraft server started*\n\n"
         f"📦 Verison Minecraft: {config.SERVER_MC_VERSION}\n"
@@ -176,9 +181,25 @@ def notify_server_ready():
 
 # ===== Уведомляем про остановку сервера =====
 def notify_server_stopped():
+    if not config.TELEGRAM_BOT_NOTIFICATION:
+        return
+
     broadcast("🔴 *Minecraft server stopped*")
 
 
 # ===== Уведомляем про рестарт сервера =====
 def notify_server_restarted():
+    if not config.TELEGRAM_BOT_NOTIFICATION:
+        return
+
     broadcast("🔄 *Minecraft server restarting*")
+
+
+# ===== Функция для остановки бота =====
+def stop_bot():
+    print("W.I.P")
+
+
+# ===== Функция для перезапуска бота =====
+def reload_bot():
+    print("W.I.P")

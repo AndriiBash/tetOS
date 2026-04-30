@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 # ===== Конфиги TetOS =====
-VERSION = "2026.4.29"
+VERSION = "2026.1.30"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SERVER_DIR = PROJECT_ROOT / "server"
 RUN_SCRIPT = PROJECT_ROOT / "src" / "run_server.sh"
@@ -35,6 +35,7 @@ else:
 TELEGRAM_BOT = None
 TELEGRAM_BOT_THREAD = None
 TELEGRAM_BOT_RUNNING = False
+TELEGRAM_BOT_NOTIFICATION = False
 TELEGRAM_USERS_FILE = Path(__file__).resolve().parent.parent / "telegram_cache" / "tg_users.txt"
 TELEGRAM_USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
