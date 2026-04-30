@@ -79,10 +79,12 @@ An important point for the utility is the commands, the main commands will look 
 info - Show server status (RAM, players, version, etc.)
 start - Start the server (optional: --hard for hard start)
 stop - Stop the server
+help - Show help menu
 restart - Restart the server
 clear/cls - Clear the terminal
 tps - Show server TPS
 mspt - Show MSPT servers
+set - Set server properties (max-ram, gamemode, telegram notify, etc.)
 exit - Exit the utility
 ```
 
@@ -124,7 +126,7 @@ tetOS/                        # Repository root
 
 <div align="center">
 
-## Automatical 
+## 🚀 Automatical 
 
 </div>
 
@@ -136,7 +138,7 @@ chmode +x ./installer.sh
 
 <div align="center">
 
-## Manual installation 
+## ✋ Manual installation 
 
 </div>
 
