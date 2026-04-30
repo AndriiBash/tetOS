@@ -76,8 +76,11 @@ ENV_FILE="$TETOS_DIR/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
     echo "🧪 Creating .env file..."
-    echo 'TELEGRAM_TOKEN="PUT_YOUR_TELEGRAM:TOKEN_HERE"' > "$ENV_FILE"
-    echo 'TELEGRAM_BOT_NOTIFICATION="true"' > "$ENV_FILE"
+    cat << EOF > "$ENV_FILE"
+TELEGRAM_TOKEN=PUT_YOUR_TELEGRAM:TOKEN_HERE
+TELEGRAM_BOT_NOTIFICATION=true
+EOF
+    echo "✅ .env file created successfully!"
 fi
 
 # ====== 8. Clean ======

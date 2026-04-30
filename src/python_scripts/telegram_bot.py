@@ -38,12 +38,13 @@ def init_bot():
 
     try:
         config.TELEGRAM_BOT = telebot.TeleBot(config.TELEGRAM_TOKEN)
-
+        config.TELEGRAM_BOT_RUNNING = True
         #bot_info = config.TELEGRAM_BOT.get_me()
         #print(f"{GREEN}✅ Telegram bot connected: @{bot_info.username}{RESET}")
 
     except Exception as e:
-        #print(f"{RED}❌ Telegram bot auth failed: {e}{RESET}")
+        print(f"{RED}❌ Telegram bot auth failed: {e}{RESET}")
+        config.TELEGRAM_BOT_RUNNING = False
         return False
 
     # Обработка команд в Telegram боте
@@ -133,6 +134,7 @@ def init_bot():
     def run_bot():
         try:
             config.TELEGRAM_BOT.infinity_polling(skip_pending=True)#timeout=15, long_polling_timeout=30)
+            TELEGRAM_BOT_RUNNING = True
         except Exception as e:
             print(f"{RED}❌ Telegram bot crashed: {e}{RESET}")
 

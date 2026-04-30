@@ -29,10 +29,10 @@ try:
     from telegram_bot import (
         init_bot, 
         )
-    config.TELEGRAM_AVAILABLE = True
+    config.TELEGRAM_LIB_AVAILABLE = True
 except ImportError as e:
     print(f"Failed to import telegram_bot.py: {e}")
-    config.TELEGRAM_AVAILABLE = False
+    config.TELEGRAM_LIB_AVAILABLE = False
 
 
 # ===== Основная CLI петля =====
@@ -46,12 +46,12 @@ banner = f"""{RED}
    """
 
 bot_success = False
-if config.TELEGRAM_AVAILABLE:
+if config.TELEGRAM_LIB_AVAILABLE:
     bot_success = init_bot()
 
 info_line = f"Version: {YELLOW}{VERSION}{RESET}"
 
-if not config.TELEGRAM_AVAILABLE:
+if not config.TELEGRAM_BOT_RUNNING:
     tg_color = RED
     tg_available = "not available"
 else:
@@ -74,7 +74,7 @@ print(f"│  {info_line.center(max_len)}    │")
 print(f"│  {status_line.center(max_len)}   │")
 print(f"└{'─' * (max_len - 3)}┘\n")
 
-if not config.TELEGRAM_AVAILABLE:
+if not config.TELEGRAM_LIB_AVAILABLE:
     print(f"{RED}🔕 Telegram notifications disabled (missing telegram_bot.py or libraries){RESET}")
 
 

@@ -523,6 +523,7 @@ def handle_set_command(args: list):
 
     elif option == "token":
         update_env_variable("TELEGRAM_TOKEN", value)
+        print(f"{GREEN}✅ Telegram token updated{RESET}")
 
 
 # ===== Функция обновления server.properties =====
