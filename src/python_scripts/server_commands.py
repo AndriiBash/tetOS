@@ -371,18 +371,18 @@ def update_run_script_ram(run_script: config.RUN_SCRIPT, ram_min_mb=None, ram_ma
     old_line = match.group(0)
     new_line = old_line
 
-    # Обновляем min RAM
+    # Оновляємо min RAM
     if ram_min_mb is not None:
         new_line = re.sub(r"-Xms\S+", f"-Xms{ram_min_mb}{ram_min_unit}", new_line)
 
-    # Обновляем max RA
+    # Оновляємо max RA
     if ram_max_mb is not None:
         new_line = re.sub(r"-Xmx\S+", f"-Xmx{ram_max_mb}{ram_max_unit}", new_line)
 
     content = content.replace(old_line, new_line)
     run_script.write_text(content)
 
-    # Выводим в одну строку
+    # Виводим в одну строку
     parts = []
     if ram_min_mb is not None:
         parts.append(f"min: {ram_min_mb}{ram_min_unit}")
