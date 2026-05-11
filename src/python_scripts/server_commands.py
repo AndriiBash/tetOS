@@ -318,14 +318,14 @@ def fetch_tps():
 
     import re
 
-    # Отправляем команду серверу
+    # Надсилаємо команду серверу
     config.SERVER_PROCESS.stdin.write("tick query\n")
     config.SERVER_PROCESS.stdin.flush()
 
     tps = 0.0
     mspt = 0.0
 
-    # Читаем несколько строк ответа
+    # Читаеємо декілька строк відповіді
     for _ in range(15):  # максимум 15 строк
         line = config.SERVER_PROCESS.stdout.readline()
         if not line:
