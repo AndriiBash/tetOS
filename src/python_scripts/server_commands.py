@@ -348,7 +348,7 @@ def parse_ram_value(value: str) -> Optional[int]:
             return int(value.rstrip("GB").rstrip("G")), "G"
         if value.endswith(("MB", "M")):
             return int(value.rstrip("MB").rstrip("M")), "M"
-        # если без суффикса — считаем как GB
+        # якщо без суфікса — зчитуємо як GB
         return int(value), "G"
     except ValueError:
         return None
