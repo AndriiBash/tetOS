@@ -49,7 +49,7 @@ def kill_process_on_port(port=25565) -> bool:
         )
         pids = result.stdout.strip().split("\n")
         if not pids or pids == ['']:
-            # Если на порту никого нет
+            # Якщо на порту нікого немає нет
             return False
         for pid in pids:
             if pid:
