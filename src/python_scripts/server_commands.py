@@ -49,7 +49,7 @@ def kill_process_on_port(port=25565) -> bool:
         )
         pids = result.stdout.strip().split("\n")
         if not pids or pids == ['']:
-            # Если на порту никого нет
+            # Якщо на порту нікого немає нет
             return False
         for pid in pids:
             if pid:
@@ -318,14 +318,14 @@ def fetch_tps():
 
     import re
 
-    # Отправляем команду серверу
+    # Надсилаємо команду серверу
     config.SERVER_PROCESS.stdin.write("tick query\n")
     config.SERVER_PROCESS.stdin.flush()
 
     tps = 0.0
     mspt = 0.0
 
-    # Читаем несколько строк ответа
+    # Читаеємо декілька строк відповіді
     for _ in range(15):  # максимум 15 строк
         line = config.SERVER_PROCESS.stdout.readline()
         if not line:
@@ -348,7 +348,7 @@ def parse_ram_value(value: str) -> Optional[int]:
             return int(value.rstrip("GB").rstrip("G")), "G"
         if value.endswith(("MB", "M")):
             return int(value.rstrip("MB").rstrip("M")), "M"
-        # если без суффикса — считаем как GB
+        # якщо без суфікса — зчитуємо як GB
         return int(value), "G"
     except ValueError:
         return None
@@ -371,18 +371,18 @@ def update_run_script_ram(run_script: config.RUN_SCRIPT, ram_min_mb=None, ram_ma
     old_line = match.group(0)
     new_line = old_line
 
-    # Обновляем min RAM
+    # Оновляємо min RAM
     if ram_min_mb is not None:
         new_line = re.sub(r"-Xms\S+", f"-Xms{ram_min_mb}{ram_min_unit}", new_line)
 
-    # Обновляем max RA
+    # Оновляємо max RA
     if ram_max_mb is not None:
         new_line = re.sub(r"-Xmx\S+", f"-Xmx{ram_max_mb}{ram_max_unit}", new_line)
 
     content = content.replace(old_line, new_line)
     run_script.write_text(content)
 
-    # Выводим в одну строку
+    # Виводим в одну строку
     parts = []
     if ram_min_mb is not None:
         parts.append(f"min: {ram_min_mb}{ram_min_unit}")
